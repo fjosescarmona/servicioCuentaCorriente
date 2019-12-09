@@ -32,6 +32,11 @@ public class CuentaCorrienteController {
 		return s_cuenta.getDataByDoc(doc);
 	}
 	
+	@GetMapping("/getCcorrienteSaldo/{nro_cuenta}")
+	public Mono<Map<String, Object>> getCcorrienteSaldo(@PathVariable("nro_cuenta") String nro_cuenta){
+		return s_cuenta.getSaldo(nro_cuenta);
+	}
+	
 	@PostMapping("/saveMovimientosCorriente")
 	public Mono<Map<String, Object>> saveMovimientosCorriente(@RequestBody Movimientos movimiento){
 		return s_cuenta.saveMovimiento(movimiento);

@@ -16,7 +16,9 @@ public interface ServiceCta {
 	public Flux<CuentaCorriente> getData();
 	
 	public Mono<CuentaCorriente> getDataByDoc(String doc);
-	
+
+	public Mono<Map<String, Object>> getSaldo(String nro_cuenta);
+
 	public Mono<Void> deleteData(String id);
 	
 	public Mono<CuentaCorriente> editData(String id, CuentaCorriente cuenta);

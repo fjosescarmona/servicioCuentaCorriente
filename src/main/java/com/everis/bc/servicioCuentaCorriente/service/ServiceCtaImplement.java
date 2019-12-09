@@ -148,4 +148,16 @@ public class ServiceCtaImplement implements ServiceCta {
 		return repo1.findByTitularesDoc(doc);
 	}
 
+	@Override
+	public Mono<Map<String, Object>> getSaldo(String nro_cuenta) {
+		// TODO Auto-generated method stub
+		Map<String, Object> respuesta = new HashMap<String, Object>();
+		
+		return repo1.findByNro_cuenta(nro_cuenta).map(cta->{
+			respuesta.put("saldo", cta.getSaldo());
+			return respuesta;
+		});
+		//return null;
+	}
+
 }
