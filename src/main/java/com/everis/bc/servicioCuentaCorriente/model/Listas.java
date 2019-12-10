@@ -3,29 +3,40 @@ package com.everis.bc.servicioCuentaCorriente.model;
 import javax.validation.constraints.NotNull;
 
 public class Listas {
+	
+	@NotNull
+	private String name="";
+	@NotNull
+	private String lastname="";
+	@NotNull
+	private String r_social="";
 	@NotNull
 	private String doc="";
 	@NotNull
-	private String nombre="";
-	@NotNull
-	private String Apellido="";
-	@NotNull
 	private String producto="";
 
-	public String getNombre() {
-		return nombre;
+	public String getR_social() {
+		return r_social;
 	}
 
-	public void setNombre(String nombre) {
-		this.nombre = nombre;
+	public void setR_social(String r_social) {
+		this.r_social = r_social;
 	}
 
-	public String getApellido() {
-		return Apellido;
+	public String getName() {
+		return name;
 	}
 
-	public void setApellido(String apellido) {
-		Apellido = apellido;
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getLastname() {
+		return lastname;
+	}
+
+	public void setLastname(String lastname) {
+		this.lastname = lastname;
 	}
 
 	public String getProducto() {

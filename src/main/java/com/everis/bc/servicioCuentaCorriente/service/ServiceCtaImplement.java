@@ -5,12 +5,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.everis.bc.servicioCuentaCorriente.model.CuentaCorriente;
+import com.everis.bc.servicioCuentaCorriente.model.Empresa;
 import com.everis.bc.servicioCuentaCorriente.model.Listas;
 import com.everis.bc.servicioCuentaCorriente.model.Movimientos;
+import com.everis.bc.servicioCuentaCorriente.model.Persona;
 import com.everis.bc.servicioCuentaCorriente.repo.Repo;
 import com.everis.bc.servicioCuentaCorriente.repo.RepoMovimientos;
 
@@ -24,7 +28,9 @@ public class ServiceCtaImplement implements ServiceCta {
 	private Repo repo1;
 	@Autowired
 	private RepoMovimientos repoMov;
-	//private WebClient client;
+	
+	@Autowired
+	private WebClient client;
 	
 	//private List<String> aux;
 	@Override
@@ -32,41 +38,35 @@ public class ServiceCtaImplement implements ServiceCta {
 		Map<String, Object> respuesta = new HashMap<String, Object>();
 		//validando tipo de cuenta: Persona o Empresa
 		if(cuenta.getTipo().equals("P")) {
-			String aux="";
 			
-			
-		
 			cuenta.getTitulares().stream().forEach(titular->{
-				 Mono<CuentaCorriente> cta=repo1.findByTitularesDoc(titular.getDoc());
-				
-				if(cta.hasElement() != null) {
-					
-					//System.out.println(repo1.findByTitularesDoc(titular.getDoc()));
-					aux.concat(titular.getDoc());
-					//System.out.println(aux);
-				}
+			
+			client.post().uri("/savePersonaData").accept(MediaType.APPLICATION_JSON_UTF8)
+					.contentType(MediaType.APPLICATION_JSON_UTF8)
+					.body(BodyInserters.fromObject(titular))
+					.retrieve()
+					.bodyToMono(Persona.class).subscribe();
+			
 			});
-			if(aux.equals("")) {
-				//Map<String, Object> persona = new HashMap<String, Object>();
-				//persona.put("nombre", cuenta.getTitulares());
-				//client.get().uri("/saveEmpresaData", persona);
+			return repo1.save(cuenta).map(cta->{
+				respuesta.put("Mensaje: ", "guardado correcto");
+				return  respuesta;
+			});
+			
+		}else {
+			cuenta.getTitulares().stream().forEach(titular->{
+				
+				client.post().uri("/saveEmpresaData").accept(MediaType.APPLICATION_JSON_UTF8)
+						.contentType(MediaType.APPLICATION_JSON_UTF8)
+						.body(BodyInserters.fromObject(titular))
+						.retrieve()
+						.bodyToMono(Empresa.class).subscribe();
+				
+				});
 				return repo1.save(cuenta).map(cta->{
 					respuesta.put("Mensaje: ", "guardado correcto");
 					return  respuesta;
 				});
-			}else {
-				respuesta.put("Error: ", "El titular "+aux+" ya posee una cuenta corriente");
-				return Mono.just(respuesta);
-			}
-			
-		}else {
-			//Map<String, Object> empresa = new HashMap<String, Object>();
-			//empresa.put("", cuenta.getTitulares());
-			return repo1.save(cuenta).map(cta->{
-				//client.get().uri("/saveEmpresaData", empresa);
-				respuesta.put("Mensaje: ", "guardado correcto");
-				return  respuesta;
-			});
 		}
 		
 		
