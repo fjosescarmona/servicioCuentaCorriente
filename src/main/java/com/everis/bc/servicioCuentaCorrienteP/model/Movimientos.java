@@ -1,4 +1,4 @@
-package com.everis.bc.servicioCuentaCorriente.model;
+package com.everis.bc.servicioCuentaCorrienteP.model;
 
 import java.util.Date;
 

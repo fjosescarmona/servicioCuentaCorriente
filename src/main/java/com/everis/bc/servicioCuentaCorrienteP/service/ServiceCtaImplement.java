@@ -1,27 +1,30 @@
-package com.everis.bc.servicioCuentaCorriente.service;
+package com.everis.bc.servicioCuentaCorrienteP.service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.everis.bc.servicioCuentaCorriente.model.CuentaCorriente;
-import com.everis.bc.servicioCuentaCorriente.model.Empresa;
-import com.everis.bc.servicioCuentaCorriente.model.Listas;
-import com.everis.bc.servicioCuentaCorriente.model.Movimientos;
-import com.everis.bc.servicioCuentaCorriente.model.Persona;
-import com.everis.bc.servicioCuentaCorriente.repo.Repo;
-import com.everis.bc.servicioCuentaCorriente.repo.RepoMovimientos;
+import com.everis.bc.servicioCuentaCorrienteP.model.CuentaCorrienteP;
+import com.everis.bc.servicioCuentaCorrienteP.model.Empresa;
+import com.everis.bc.servicioCuentaCorrienteP.model.Listas;
+import com.everis.bc.servicioCuentaCorrienteP.model.Movimientos;
+import com.everis.bc.servicioCuentaCorrienteP.model.Persona;
+import com.everis.bc.servicioCuentaCorrienteP.repository.Repo;
+import com.everis.bc.servicioCuentaCorrienteP.repository.RepoMovimientos;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
+@Configuration
 public class ServiceCtaImplement implements ServiceCta {
 
 	@Autowired
@@ -29,59 +32,47 @@ public class ServiceCtaImplement implements ServiceCta {
 	@Autowired
 	private RepoMovimientos repoMov;
 	
-	@Autowired
-	private WebClient client;
-	
-	//private List<String> aux;
 	@Override
-	public Mono<Map<String, Object>> saveData(CuentaCorriente cuenta) {
+	public Mono<Map<String, Object>> saveData(CuentaCorrienteP cuenta) {
 		Map<String, Object> respuesta = new HashMap<String, Object>();
 		//validando tipo de cuenta: Persona o Empresa
-		if(cuenta.getTipo().equals("P")) {
+		
+			
+			String aux="";
+			
 			
 			cuenta.getTitulares().stream().forEach(titular->{
-			
-			client.post().uri("/savePersonaData").accept(MediaType.APPLICATION_JSON_UTF8)
+				//Mono<CuentaCorriente> cta=repo1.findByTitularesDoc(titular.getDoc()).subscribe();
+				
+				
+				if(!repo1.findByTitularesDoc(titular.getDoc()).toString().equals("")){
+					aux.concat(titular.getDoc());
+				}
+			/*client.post().uri("/savePersonaData").accept(MediaType.APPLICATION_JSON_UTF8)
 					.contentType(MediaType.APPLICATION_JSON_UTF8)
 					.body(BodyInserters.fromObject(titular))
 					.retrieve()
-					.bodyToMono(Persona.class).subscribe();
+					.bodyToMono(Persona.class).subscribe();*/
 			
 			});
-			return repo1.save(cuenta).map(cta->{
-				respuesta.put("Mensaje: ", "guardado correcto");
-				return  respuesta;
-			});
-			
-		}else {
-			cuenta.getTitulares().stream().forEach(titular->{
-				
-				client.post().uri("/saveEmpresaData").accept(MediaType.APPLICATION_JSON_UTF8)
-						.contentType(MediaType.APPLICATION_JSON_UTF8)
-						.body(BodyInserters.fromObject(titular))
-						.retrieve()
-						.bodyToMono(Empresa.class).subscribe();
-				
-				});
+			if(aux.equals("")) {
 				return repo1.save(cuenta).map(cta->{
 					respuesta.put("Mensaje: ", "guardado correcto");
 					return  respuesta;
 				});
-		}
+			}else {
+				return Mono.just(cuenta).map(c->{
+					respuesta.put("Error", "Las cuentas los clientes "+aux+" ya poseen cuenta corriente.");
+					return respuesta;
+				});
+			}
+			
 		
-		
-		// TODO Auto-generated method stub
-		
-		/*return repo1.save(cuenta).map(cta->{
-			respuesta.put("Mensaje: ", "guardado correcto");
-			return  respuesta;
-		});*/
-		//respuesta.put("Mensaje: ", "guardado correcto");
 		
 	}
 
 	@Override
-	public Flux<CuentaCorriente> getData() {
+	public Flux<CuentaCorrienteP> getData() {
 		// TODO Auto-generated method stub
 		return repo1.findAll();
 	}
@@ -93,7 +84,7 @@ public class ServiceCtaImplement implements ServiceCta {
 	}
 
 	@Override
-	public Mono<CuentaCorriente> editData(String id, CuentaCorriente cuenta) {
+	public Mono<CuentaCorrienteP> editData(String id, CuentaCorrienteP cuenta) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -143,7 +134,7 @@ public class ServiceCtaImplement implements ServiceCta {
 	}
 
 	@Override
-	public Mono<CuentaCorriente> getDataByDoc(String doc) {
+	public Mono<CuentaCorrienteP> getDataByDoc(String doc) {
 		// TODO Auto-generated method stub
 		return repo1.findByTitularesDoc(doc);
 	}

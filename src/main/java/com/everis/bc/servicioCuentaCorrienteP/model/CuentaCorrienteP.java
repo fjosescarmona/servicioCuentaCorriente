@@ -1,4 +1,4 @@
-package com.everis.bc.servicioCuentaCorriente.model;
+package com.everis.bc.servicioCuentaCorrienteP.model;
 
 import java.util.List;
 
@@ -8,7 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection="c_ccorriente")
-public class CuentaCorriente {
+public class CuentaCorrienteP {
 	@Id
 	private String id;
 	@NotNull
