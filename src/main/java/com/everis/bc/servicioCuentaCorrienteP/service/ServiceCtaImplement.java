@@ -1,22 +1,14 @@
 package com.everis.bc.servicioCuentaCorrienteP.service;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
-
 import com.everis.bc.servicioCuentaCorrienteP.model.CuentaCorrienteP;
-import com.everis.bc.servicioCuentaCorrienteP.model.Empresa;
-import com.everis.bc.servicioCuentaCorrienteP.model.Listas;
 import com.everis.bc.servicioCuentaCorrienteP.model.Movimientos;
-import com.everis.bc.servicioCuentaCorrienteP.model.Persona;
 import com.everis.bc.servicioCuentaCorrienteP.repository.Repo;
 import com.everis.bc.servicioCuentaCorrienteP.repository.RepoMovimientos;
 
@@ -31,13 +23,12 @@ public class ServiceCtaImplement implements ServiceCta {
 	private Repo repo1;
 	@Autowired
 	private RepoMovimientos repoMov;
+
 	
 	@Override
 	public Mono<Map<String, Object>> saveData(CuentaCorrienteP cuenta) {
 		Map<String, Object> respuesta = new HashMap<String, Object>();
-		//validando tipo de cuenta: Persona o Empresa
 		
-			
 			String aux="";
 			
 			
@@ -45,7 +36,7 @@ public class ServiceCtaImplement implements ServiceCta {
 				//Mono<CuentaCorriente> cta=repo1.findByTitularesDoc(titular.getDoc()).subscribe();
 				
 				
-				if(!repo1.findByTitularesDoc(titular.getDoc()).toString().equals("")){
+				if(!repo1.findByTitularesDoc(titular.getDoc()).equals(cuenta)){
 					aux.concat(titular.getDoc());
 				}
 			/*client.post().uri("/savePersonaData").accept(MediaType.APPLICATION_JSON_UTF8)
@@ -62,7 +53,7 @@ public class ServiceCtaImplement implements ServiceCta {
 				});
 			}else {
 				return Mono.just(cuenta).map(c->{
-					respuesta.put("Error", "Las cuentas los clientes "+aux+" ya poseen cuenta corriente.");
+					respuesta.put("Error", "Los clientes "+aux+" ya poseen cuenta corriente.");
 					return respuesta;
 				});
 			}
