@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Service;
 import com.everis.bc.servicioCuentaCorrienteP.model.CuentaCorrienteP;
@@ -29,37 +28,11 @@ public class ServiceCtaImplement implements ServiceCta {
 	public Mono<Map<String, Object>> saveData(CuentaCorrienteP cuenta) {
 		Map<String, Object> respuesta = new HashMap<String, Object>();
 		
-			String aux="";
+		return repo1.save(cuenta).map(cta->{
+			respuesta.put("Mensaje: ", "guardado correcto");
+			return  respuesta;
+		});
 			
-			
-			cuenta.getTitulares().stream().forEach(titular->{
-				//Mono<CuentaCorriente> cta=repo1.findByTitularesDoc(titular.getDoc()).subscribe();
-				
-				
-				if(!repo1.findByTitularesDoc(titular.getDoc()).equals(cuenta)){
-					aux.concat(titular.getDoc());
-				}
-			/*client.post().uri("/savePersonaData").accept(MediaType.APPLICATION_JSON_UTF8)
-					.contentType(MediaType.APPLICATION_JSON_UTF8)
-					.body(BodyInserters.fromObject(titular))
-					.retrieve()
-					.bodyToMono(Persona.class).subscribe();*/
-			
-			});
-			if(aux.equals("")) {
-				return repo1.save(cuenta).map(cta->{
-					respuesta.put("Mensaje: ", "guardado correcto");
-					return  respuesta;
-				});
-			}else {
-				return Mono.just(cuenta).map(c->{
-					respuesta.put("Error", "Los clientes "+aux+" ya poseen cuenta corriente.");
-					return respuesta;
-				});
-			}
-			
-		
-		
 	}
 
 	@Override
