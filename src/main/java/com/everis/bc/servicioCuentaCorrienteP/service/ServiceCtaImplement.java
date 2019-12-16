@@ -1,13 +1,17 @@
 package com.everis.bc.servicioCuentaCorrienteP.service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Service;
+
 import com.everis.bc.servicioCuentaCorrienteP.model.CuentaCorrienteP;
 import com.everis.bc.servicioCuentaCorrienteP.model.Movimientos;
+import com.everis.bc.servicioCuentaCorrienteP.model.Listas;
 import com.everis.bc.servicioCuentaCorrienteP.repository.Repo;
 import com.everis.bc.servicioCuentaCorrienteP.repository.RepoMovimientos;
 
@@ -22,16 +26,41 @@ public class ServiceCtaImplement implements ServiceCta {
 	private Repo repo1;
 	@Autowired
 	private RepoMovimientos repoMov;
-
+	
+	private List<String> docs;
 	
 	@Override
-	public Mono<Map<String, Object>> saveData(CuentaCorrienteP cuenta) {
+	public Mono<CuentaCorrienteP> saveData(CuentaCorrienteP cuenta) {
 		Map<String, Object> respuesta = new HashMap<String, Object>();
 		
-		return repo1.save(cuenta).map(cta->{
-			respuesta.put("Mensaje: ", "guardado correcto");
-			return  respuesta;
-		});
+		List<String> doc = new ArrayList<>();
+		for(Listas h : cuenta.getTitulares()) {
+			doc.add(h.getDoc());
+		}
+		
+		
+		
+		 return repo1.findByTitularesDocList(doc).flatMap(ctas->{
+			 return Mono.just(ctas);
+		 })
+				.switchIfEmpty(repo1.save(cuenta).flatMap(cta->{
+			return Mono.just(cta);
+		})).next();
+		
+			
+			/*return repo1.findByTitularesDocList(docs).map(ctadb -> {
+				respuesta.put("Error", "El cliente ya posee una cuenta corriente");
+				return respuesta;
+			}).switchIfEmpty(
+				return repo1.save(cuenta).map(cta->{
+				respuesta.put("Mensaje: ", "guardado correcto");
+				return respuesta;
+			});
+					);
+					
+		});*/
+				
+		
 			
 	}
 
@@ -76,7 +105,7 @@ public class ServiceCtaImplement implements ServiceCta {
 				case "deposito":{
 					cta.setSaldo(saldo+movimiento.getMonto());
 					repo1.save(cta).subscribe();
-					repoMov.save(movimiento);
+					repoMov.save(movimiento).subscribe();
 					respuesta.put("Result", "Deposito realizado, su nuevo saldo es: "+(saldo+movimiento.getMonto()));
 					return respuesta;
 				}
@@ -100,7 +129,12 @@ public class ServiceCtaImplement implements ServiceCta {
 	@Override
 	public Mono<CuentaCorrienteP> getDataByDoc(String doc) {
 		// TODO Auto-generated method stub
-		return repo1.findByTitularesDoc(doc);
+		return repo1.findByTitularesDoc(doc)
+				.switchIfEmpty(Mono.just("").flatMap(r->{
+					CuentaCorrienteP cta2=new CuentaCorrienteP();
+					return Mono.just(cta2);
+				})
+				);
 	}
 
 	@Override
