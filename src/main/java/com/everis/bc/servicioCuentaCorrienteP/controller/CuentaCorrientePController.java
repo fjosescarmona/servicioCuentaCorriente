@@ -46,5 +46,30 @@ public class CuentaCorrientePController {
 	public Flux<Movimientos> getMovimientosCorriente(@PathVariable("nro_cuenta") String nro_cuenta){
 		return s_cuenta.getMovimientos(nro_cuenta);
 	}
+	
+	@PostMapping("/savePagotdcPcorriente")
+	public Mono<Movimientos> savePagotdcPcorriente(@RequestBody Movimientos movimiento){
+		return s_cuenta.savePagotdc(movimiento);
+	}
+	
+	@PostMapping("/saveDepositoPcorriente")
+	public Mono<Movimientos> saveDepositoPcorriente(@RequestBody Movimientos movimiento){
+		return s_cuenta.saveDeposito(movimiento);
+	}
+	
+	@PostMapping("/saveRetiroPcorriente")
+	public Mono<Movimientos> saveRetiroPcorriente(@RequestBody Movimientos movimiento){
+		return s_cuenta.saveRetiro(movimiento);
+	}
+	
+	@PostMapping("/getTransferPcorriente")
+	public Mono<Movimientos> getTransferPcorriente(@RequestBody Movimientos movimiento){
+		return s_cuenta.getTransfer(movimiento);
+	}
+	
+	@PostMapping("/setTransferPcorriente")
+	public Mono<Movimientos> setTransferPcorriente(@RequestBody Movimientos movimiento){
+		return s_cuenta.setTransfer(movimiento);
+	}
 
 }
