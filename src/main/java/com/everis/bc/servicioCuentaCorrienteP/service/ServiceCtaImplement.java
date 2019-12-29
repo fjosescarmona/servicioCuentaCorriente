@@ -19,10 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.everis.bc.servicioCuentaCorrienteP.model.Deudores;
 import com.everis.bc.servicioCuentaCorrienteP.model.CuentaCorrienteP;
 import com.everis.bc.servicioCuentaCorrienteP.model.Movimientos;
 import com.everis.bc.servicioCuentaCorrienteP.model.Listas;
 import com.everis.bc.servicioCuentaCorrienteP.repository.Repo;
+import com.everis.bc.servicioCuentaCorrienteP.repository.RepoD;
 import com.everis.bc.servicioCuentaCorrienteP.repository.RepoMovimientos;
 
 import reactor.core.publisher.Flux;
@@ -34,6 +36,8 @@ public class ServiceCtaImplement implements ServiceCta {
 
 	@Autowired
 	private Repo repo1;
+	@Autowired
+	private RepoD repod;
 	@Autowired
 	private RepoMovimientos repoMov;
 	@Autowired
@@ -51,6 +55,9 @@ public class ServiceCtaImplement implements ServiceCta {
 	@Autowired
 	@Qualifier("vip")
 	private WebClient vip;
+	@Autowired
+	@Qualifier("info")
+	private WebClient info;
 	
 	@Value("${valores.comision}")
 	private double comision;
@@ -61,32 +68,26 @@ public class ServiceCtaImplement implements ServiceCta {
 
 	@Override
 	public Mono<CuentaCorrienteP> saveData(CuentaCorrienteP cuenta) {
-		//Map<String, Object> respuesta = new HashMap<String, Object>();
+		Map<String, Object> params = new HashMap<String, Object>();
 
-		List<String> doc = new ArrayList<>();
+		List<String> docs = new ArrayList<>();
 		for (Listas h : cuenta.getTitulares()) {
-			doc.add(h.getDoc());
+			docs.add(h.getDoc());
 		}
 
-		return repo1.findByTitularesDocList(doc).flatMap(ctas -> {
-			if(!ctas.getBankcode().equals(cuenta.getBankcode())) {
-				return repo1.save(cuenta);
-			}else {
-				return Mono.just(ctas);
-			}
-			
+		Date fecha = new Date();
+		cuenta.setMovesxmonth(movesxmonth);
+		cuenta.setLastmove(fecha);
+		return repod.findByTitularesDocList(docs).flatMap(res -> {
+			return Mono.just(new CuentaCorrienteP());
+		}).switchIfEmpty(repo1.findByTitularesDocList(docs, cuenta.getBankcode()).flatMap(ctas -> {
+
+			return Mono.just(ctas);
+
 		}).switchIfEmpty(repo1.save(cuenta).flatMap(cta -> {
 			return Mono.just(cta);
-		})).next();
-
-		/*
-		 * return repo1.findByTitularesDocList(docs).map(ctadb -> {
-		 * respuesta.put("Error", "El cliente ya posee una cuenta corriente"); return
-		 * respuesta; }).switchIfEmpty( return repo1.save(cuenta).map(cta->{
-		 * respuesta.put("Mensaje: ", "guardado correcto"); return respuesta; }); );
-		 * 
-		 * });
-		 */
+		}))).next();
+	
 
 	}
 
@@ -116,12 +117,9 @@ public class ServiceCtaImplement implements ServiceCta {
 	}
 
 	@Override
-	public Mono<CuentaCorrienteP> getDataByDoc(String doc) {
+	public Flux<CuentaCorrienteP> getDataByDoc(String doc) {
 		// TODO Auto-generated method stub
-		return repo1.findByTitularesDoc(doc).switchIfEmpty(Mono.just("").flatMap(r -> {
-			CuentaCorrienteP cta2 = new CuentaCorrienteP();
-			return Mono.just(cta2);
-		}));
+		return repo1.findByTitularesDoc(doc);
 	}
 
 	@Override
@@ -143,8 +141,8 @@ public class ServiceCtaImplement implements ServiceCta {
 
 			if (cta.getSaldo() >= mov.getMonto()) {
 				cta.setSaldo(cta.getSaldo() - mov.getMonto());
-				// DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-				// LocalDateTime now = LocalDateTime.now();
+				//DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+				//LocalDateTime now = LocalDateTime.now();
 				Map<String, Object> params = new HashMap<String, Object>();
 				params.put("nro_tarjeta", mov.getNro_tarjeta());
 				params.put("descripcion", "pago");
@@ -175,49 +173,44 @@ public class ServiceCtaImplement implements ServiceCta {
 	@Override
 	public Mono<Movimientos> saveDeposito(Movimientos mov) {
 		// TODO Auto-generated method stub
-		/*return repo1.findByNro_cuenta(mov.getNro_cuenta()).flatMap(cta -> {
-
-			cta.setSaldo(cta.getSaldo() + mov.getMonto());
-			return repo1.save(cta).flatMap(ncta -> {
-				return repoMov.save(mov);
-			});
-		});*/
 		return repo1.findByNro_cuenta(mov.getNro_cuenta()).flatMap(cta -> {
-			//-----------------valida si tiene movimientos disponibles en el mes-----------------//
+			// -----------------valida si tiene movimientos disponibles en el
+			// mes-----------------//
 			if (cta.getLastmove().getMonth() == mov.getFecha().getMonth() && cta.getMovesxmonth() > 0) {
 				Double saldo = cta.getSaldo();
 				cta.setSaldo(saldo + mov.getMonto());
 				cta.setMovesxmonth(cta.getMovesxmonth() - 1);
 				cta.setLastmove(mov.getFecha());
-				return repo1.save(cta).flatMap(ncta->{
+				return repo1.save(cta).flatMap(ncta -> {
 					return repoMov.save(mov);
 				});
-				
-				
+
 			} else {
-			//-si el mes de la transaccion es distinto reinicia la cantidad de movimientos por mes-//
+				// -si el mes de la transaccion es distinto reinicia la cantidad de movimientos
+				// por mes-//
 				if (cta.getLastmove().getMonth() != mov.getFecha().getMonth()) {
 					Double saldo = cta.getSaldo();
 					cta.setSaldo(saldo + mov.getMonto());
 					cta.setLastmove(mov.getFecha());
 					cta.setMovesxmonth(4);
-					return repo1.save(cta).flatMap(ncta->{
+					return repo1.save(cta).flatMap(ncta -> {
 						return repoMov.save(mov);
 					});
-					
-			//--si no tiene movimientos disponibles en el mes aplica el cobro de comision--//
+
+					// --si no tiene movimientos disponibles en el mes aplica el cobro de
+					// comision--//
 				} else {
 					Double saldo = cta.getSaldo();
-					//Double comision = 15.00;
-					
-					if ((saldo+mov.getMonto()) - comision >=0) {
+					// Double comision = 15.00;
+
+					if ((saldo + mov.getMonto()) - comision >= 0) {
 						cta.setSaldo(saldo + mov.getMonto() - comision);
 						cta.setLastmove(mov.getFecha());
 						mov.setComision(comision);
-						return repo1.save(cta).flatMap(ncta->{
+						return repo1.save(cta).flatMap(ncta -> {
 							return repoMov.save(mov);
 						});
-						
+
 					} else {
 						return Mono.just(new Movimientos());
 					}
@@ -229,61 +222,55 @@ public class ServiceCtaImplement implements ServiceCta {
 	@Override
 	public Mono<Movimientos> saveRetiro(Movimientos mov) {
 		// TODO Auto-generated method stub
-		/*return repo1.findByNro_cuenta(mov.getNro_cuenta()).flatMap(cta -> {
-			if (cta.getSaldo() >= mov.getMonto()) {
-				cta.setSaldo(cta.getSaldo() - mov.getMonto());
-				return repo1.save(cta).flatMap(ncta -> {
-					return repoMov.save(mov);
-				});
-			} else {
-				return Mono.just(new Movimientos());
-			}
-		});*/
 		return repo1.findByNro_cuenta(mov.getNro_cuenta()).flatMap(cta -> {
-			//-----------------valida si tiene movimientos disponibles en el mes-----------------//
+			// -----------------valida si tiene movimientos disponibles en el
+			// mes-----------------//
 			if (cta.getLastmove().getMonth() == mov.getFecha().getMonth() && cta.getMovesxmonth() > 0) {
 				Double saldo = cta.getSaldo();
-				cta.setSaldo(saldo + mov.getMonto());
+				//cta.setSaldo(saldo + mov.getMonto());
 				cta.setLastmove(mov.getFecha());
 				cta.setMovesxmonth(cta.getMovesxmonth() - 1);
 				if (saldo >= mov.getMonto()) {
 					cta.setSaldo(saldo - mov.getMonto());
-					return repo1.save(cta).flatMap(ncta->{
+					return repo1.save(cta).flatMap(ncta -> {
 						return repoMov.save(mov);
 					});
-					
+
 				} else {
 					return Mono.just(new Movimientos());
 				}
 
 			} else {
-			//-si el mes de la transaccion es distinto reinicia la cantidad de movimientos por mes-//
+				// -si el mes de la transaccion es distinto reinicia la cantidad de movimientos
+				// por mes-//
 				if (cta.getLastmove().getMonth() != mov.getFecha().getMonth()) {
 					Double saldo = cta.getSaldo();
-					cta.setSaldo(saldo + mov.getMonto());
+					//cta.setSaldo(saldo + mov.getMonto());
 					if (saldo >= mov.getMonto()) {
 						cta.setSaldo(saldo - mov.getMonto());
 						cta.setLastmove(mov.getFecha());
 						cta.setMovesxmonth(4);
-						return repo1.save(cta).flatMap(ncta->{
+						return repo1.save(cta).flatMap(ncta -> {
 							return repoMov.save(mov);
 						});
-						
+
 					} else {
 						return Mono.just(new Movimientos());
 					}
-		//--si no tiene movimientos disponibles en el mes aplica el cobro de comision--//
+					// --si no tiene movimientos disponibles en el mes aplica el cobro de
+					// comision--//
 				} else {
 					Double saldo = cta.getSaldo();
-					//Double comision = 15.0;
-					cta.setSaldo(saldo + mov.getMonto());
+					// Double comision = 15.0;
+					//cta.setSaldo(saldo + mov.getMonto());
 					cta.setLastmove(mov.getFecha());
+					mov.setComision(comision);
 					if (saldo >= mov.getMonto() + comision) {
 						cta.setSaldo(saldo - mov.getMonto() - comision);
-						return repo1.save(cta).flatMap(ncta->{
+						return repo1.save(cta).flatMap(ncta -> {
 							return repoMov.save(mov);
 						});
-						
+
 					} else {
 						return Mono.just(new Movimientos());
 					}
@@ -311,7 +298,7 @@ public class ServiceCtaImplement implements ServiceCta {
 		return repo1.findByNro_cuenta(mov.getNro_cuenta()).flatMap(cta -> {
 
 			switch (mov.getCuentaToTipo()) {
-			case "ahorro": {
+			case "pcorriente": {
 
 				if (cta.getSaldo() >= mov.getMonto()) {
 					Map<String, Object> params = new HashMap<String, Object>();
@@ -321,11 +308,11 @@ public class ServiceCtaImplement implements ServiceCta {
 					params.put("monto", mov.getMonto());
 					params.put("fecha", mov.getFecha());
 
-					return ahorro.post().uri("/getTransferAhorro").accept(MediaType.APPLICATION_JSON_UTF8)
+					return pcorriente.post().uri("/getTransferPcorriente").accept(MediaType.APPLICATION_JSON_UTF8)
 							.body(BodyInserters.fromObject(params)).retrieve().bodyToMono(Movimientos.class)
 							.flatMap(ptdc -> {
 
-								if (!ptdc.getNro_cuenta().equals(null)) {
+								if (!ptdc.getNro_cuenta().equals("")) {
 									cta.setSaldo(cta.getSaldo() - mov.getMonto());
 									return repo1.save(cta).flatMap(ncta -> {
 										return repoMov.save(mov);
@@ -339,7 +326,8 @@ public class ServiceCtaImplement implements ServiceCta {
 					return Mono.just(new Movimientos());
 				}
 			}
-			case "pcorriente": {
+			case "ahorro": {
+
 				if (cta.getSaldo() >= mov.getMonto()) {
 					Map<String, Object> params = new HashMap<String, Object>();
 					params.put("nro_cuenta", mov.getCuentaTo());
@@ -348,7 +336,7 @@ public class ServiceCtaImplement implements ServiceCta {
 					params.put("monto", mov.getMonto());
 					params.put("fecha", mov.getFecha());
 
-					return pcorriente.post().uri("/getTransferPcorriente").accept(MediaType.APPLICATION_JSON_UTF8)
+					return ahorro.post().uri("/getTransferAhorro").accept(MediaType.APPLICATION_JSON_UTF8)
 							.body(BodyInserters.fromObject(params)).retrieve().bodyToMono(Movimientos.class)
 							.flatMap(ptdc -> {
 
@@ -448,6 +436,15 @@ public class ServiceCtaImplement implements ServiceCta {
 			return null;
 		}
 		
+	}
+
+	@Override
+	public Flux<Deudores> saveDeudoresPcorriente(List<Deudores> deudores) {
+		// TODO Auto-generated method stub
+		
+		return repod.deleteAll().flatMapMany(v->{
+			return repod.saveAll(deudores);
+		}).switchIfEmpty(repod.saveAll(deudores));
 	}
 
 }

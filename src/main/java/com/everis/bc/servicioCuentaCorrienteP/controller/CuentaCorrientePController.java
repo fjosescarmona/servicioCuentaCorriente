@@ -1,5 +1,6 @@
 package com.everis.bc.servicioCuentaCorrienteP.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.everis.bc.servicioCuentaCorrienteP.model.Deudores;
 import com.everis.bc.servicioCuentaCorrienteP.model.CuentaCorrienteP;
 import com.everis.bc.servicioCuentaCorrienteP.model.Movimientos;
 import com.everis.bc.servicioCuentaCorrienteP.service.ServiceCta;
@@ -28,7 +30,7 @@ public class CuentaCorrientePController {
 	}
 	
 	@GetMapping("/getCcorrientePData/{doc}")
-	public Mono<CuentaCorrienteP> getCcorrienteData(@PathVariable("doc") String doc){
+	public Flux<CuentaCorrienteP> getCcorrienteData(@PathVariable("doc") String doc){
 		return s_cuenta.getDataByDoc(doc);
 	}
 	
@@ -70,6 +72,11 @@ public class CuentaCorrientePController {
 	@GetMapping("/getRangeMovimientosPcorriente/{nro_cuenta}/{from}/{to}")
 	public Flux<Movimientos> getRangeMovimientosPcorriente(@PathVariable("nro_cuenta") String nro_cuenta, @PathVariable("from") String from, @PathVariable("to") String to){
 		return s_cuenta.getRangeMovimientos(nro_cuenta, from, to);
+	}
+	
+	@PostMapping("/saveDeudoresPcorriente")
+	public Flux<Deudores> saveDeudoresPcorriente(@RequestBody List<Deudores> deudores){
+		return s_cuenta.saveDeudoresPcorriente(deudores);
 	}
 
 }

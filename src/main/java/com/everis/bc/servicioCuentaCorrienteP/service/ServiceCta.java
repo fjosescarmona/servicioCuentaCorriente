@@ -1,9 +1,11 @@
 package com.everis.bc.servicioCuentaCorrienteP.service;
 
 
+import java.util.List;
 import java.util.Map;
 
 import com.everis.bc.servicioCuentaCorrienteP.model.CuentaCorrienteP;
+import com.everis.bc.servicioCuentaCorrienteP.model.Deudores;
 import com.everis.bc.servicioCuentaCorrienteP.model.Movimientos;
 
 import reactor.core.publisher.Flux;
@@ -15,7 +17,7 @@ public interface ServiceCta {
 	
 	public Flux<CuentaCorrienteP> getData();
 	
-	public Mono<CuentaCorrienteP> getDataByDoc(String doc);
+	public Flux<CuentaCorrienteP> getDataByDoc(String doc);
 
 	public Mono<Map<String, Object>> getSaldo(String nro_cuenta);
 
@@ -36,4 +38,6 @@ public interface ServiceCta {
 	public Flux<Movimientos> getMovimientos(String nro_cuenta);
 	
 	public Flux<Movimientos> getRangeMovimientos(String nro_cuenta, String from, String to);
+	
+	public Flux<Deudores> saveDeudoresPcorriente(List<Deudores> deudores);
 }

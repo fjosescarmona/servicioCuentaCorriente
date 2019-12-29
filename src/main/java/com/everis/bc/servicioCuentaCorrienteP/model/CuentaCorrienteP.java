@@ -14,15 +14,15 @@ public class CuentaCorrienteP {
 	@Id
 	private String id;
 	@NotNull
-	private String bankcode="";
+	private String bankcode;
 	@NotNull
-	private String bank="";
+	private String bank;
 	@NotNull
-	private String nro_cuenta="";
+	private String nro_cuenta;
 	@NotNull
-	private String tipo="";
+	private String tipo;
 	@NotNull
-	private double saldo=0.0;
+	private double saldo;
 	@NotNull
 	private int movesxmonth;
 	@DateTimeFormat(pattern = "yyyy-MM-dd")

@@ -19,6 +19,8 @@ public class AppConfig {
 	private String ecorriente;
 	@Value("${valores.uri_vip}")
 	private String vip;
+	@Value("${valores.uri_info}")
+	private String info;
 	
 	@Bean
 	@Qualifier("tc")
@@ -47,5 +49,11 @@ public class AppConfig {
 	@Qualifier("vip")
 	public WebClient webClientVip() {
 		return WebClient.create(vip);
+	}
+	
+	@Bean
+	@Qualifier("info")
+	public WebClient webClientInfo() {
+		return WebClient.create(info);
 	}
 }
